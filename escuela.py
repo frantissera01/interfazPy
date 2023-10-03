@@ -64,7 +64,7 @@ def guardar_alumno():
 def cargar_datos():
     tree.delete(*tree.get_children())  # Borrar datos existentes en el Treeview
     cursor = conexion.cursor()
-    cursor.execute("SELECT Alumnos.NOMBRE, Alumnos.APELLIDO, Alumnos.DNI, Carreras.NOMBRE, estadoalumno.NOMBRE FROM Alumnos JOIN Carreras ON Alumnos.IDCARRERA = Carreras.IDCARRERA JOIN estadoalumno ON Alumnos.IDESTADOALUMNO = estadoalumno.IDESTADOALUMNO WHERE Alumnos.IDEstadoAlumno=1 ")
+    cursor.execute("SELECT Alumnos.NOMBRE, Alumnos.APELLIDO, Carreras.NOMBRE, estadoalumno.NOMBRE FROM Alumnos JOIN Carreras ON Alumnos.IDCARRERA = Carreras.IDCARRERA JOIN estadoalumno ON Alumnos.IDESTADOALUMNO = estadoalumno.IDESTADOALUMNO WHERE Alumnos.IDEstadoAlumno=1 ")
     for row in cursor.fetchall():
         tree.insert("", "end", values=row)
 
@@ -78,6 +78,7 @@ def cargar_estado_alumno(alumno_id):
 # Función para modificar el estado de un alumno
 def modificar_alumno():
     selected_item = tree.selection()  # Obtener el elemento seleccionado en el Treeview
+    
     if not selected_item:
         mostrar_alerta("Por favor, seleccione un alumno para modificar.")
         return
@@ -135,6 +136,8 @@ carrera_label=tk.Label(formulario_frame, text="Carrera: ")
 carrera_label.grid(row=4, column=0)
 carrera_combobox= ttk.Combobox(formulario_frame, state="readonly")
 carrera_combobox.grid(row=4, column=1, padx=5, pady=5, ipadx=5, ipady=5, sticky="ew")
+
+carreras = cargar_carreras()
 
 # Combo box para la condición del alumno
 condicion_label = tk.Label(formulario_frame, text="Condición:")
