@@ -1,0 +1,58 @@
+import tkinter as tk
+
+
+class Ventana:
+    def __init__(self, root, mensaje, siguiente_callback):
+        self.root = root
+        self.root.title("Navegación")
+
+        self.label = tk.Label(root, text=mensaje, font=("Helvetica", 20))
+        self.label.pack(pady=20)
+
+        self.siguiente_button = tk.Button(
+            root, text="Siguiente", command=siguiente_callback
+        )
+        self.siguiente_button.pack()
+
+    def destruir(self):
+        self.root.destroy()
+
+
+def mostrar_ventana(mensaje, siguiente_callback):
+    root = tk.Tk()
+    ventana = Ventana(root, mensaje, siguiente_callback)
+    return ventana
+
+
+def main():
+    ventanas = []
+
+    def siguiente_1():
+        ventanas[0].destruir()
+        ventanas.append(mostrar_ventana("Soy un bot", siguiente_2))
+
+    def siguiente_2():
+        ventanas[1].destruir()
+        ventanas.append(
+            mostrar_ventana("Y estoy programado para destruir tu PC", siguiente_3)
+        )
+
+    def siguiente_3():
+        ventanas[2].destruir()
+        ventanas.append(
+            mostrar_ventana("ERA MENTIRA, espero no te hayas asustado", finalizar)
+        )
+
+    def finalizar():
+        for ventana in ventanas:
+            ventana.destruir()
+        ventanas.clear()
+
+    # Primera ventana
+    ventanas.append(mostrar_ventana("Hola", siguiente_1))
+
+    ventanas[0].root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
