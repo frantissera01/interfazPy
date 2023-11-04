@@ -1,7 +1,8 @@
-import tkinter as tk
-import random
+from tkinter import ttk
+from tkinter import *
 import mysql.connector
-import re 
+import time
+import random
 
 # Conectarse a la base de datos MySQL
 db = mysql.connector.connect(
@@ -14,157 +15,115 @@ cursor = db.cursor()
 
 
 
-# Función para cargar una pregunta aleatoria desde la base de datos
-def cargar_pregunta():
-    cursor.execute("SELECT * FROM preguntas ORDER BY RAND() LIMIT 1")
-    datos_pregunta = cursor.fetchone()
-    etiqueta_pregunta.config(text=datos_pregunta[1])
-    opciones = [datos_pregunta[2], datos_pregunta[3], datos_pregunta[4], datos_pregunta[5]]
-    random.shuffle(opciones)
-    boton_opcion1.config(text=opciones[0], state=tk.NORMAL)
-    boton_opcion2.config(text=opciones[1], state=tk.NORMAL)
-    boton_opcion3.config(text=opciones[2], state=tk.NORMAL)
-    boton_opcion4.config(text=opciones[3], state=tk.NORMAL)
-    respuesta_correcta.set(datos_pregunta[2])
-    etiqueta_resultado.config(text="")
-    respuesta_correcta_label.config(text="")
-    boton_siguiente.config(state=tk.DISABLED)  # Deshabilitar el botón "Siguiente" al cargar una nueva pregunta
+global preguntas
+cursor.execute("Select * from Preguntas")
+preguntas = cursor.fetchall()
 
+global preguntas_random
+cursor.execute("Select * from Preguntas")
+preguntas_random = cursor.fetchall()
 
+random.shuffle(preguntas_random)
 
-        
-        
-        
-# Función para verificar la respuesta y mostrar la respuesta correcta en caso de ser incorrecta
-def verificar_respuesta(respuesta):
-    if respuesta == respuesta_correcta.get():
-        mensaje_respuesta.config(text="¡Correcto!", fg="green")
+global puntaje
+puntaje = 0
+
+global tiempo
+tiempo = 0
+
+global tree
+
+def empezar(numero, ventana_anterior, respuesta_anterior):
+    global puntaje
+    global tiempo
+    global tree
+
+    if numero > 15:
+        tiempo = (time.time() - tiempo)
+        minutos, segundos = divmod(tiempo, 60)
+        datos_usuario = [nombre_entry.get(),  puntaje, f"{int(minutos)} : {int(segundos)}", instagram_entry.get()]
+        print(datos_usuario)
+        cursor.execute("INSERT INTO usuarios (nombre, puntaje, tiempo, instagram) VALUES (%s, %s, %s, %s)", (datos_usuario[0], datos_usuario[2], datos_usuario[3], datos_usuario[1]))
+        db.commit()
+        actualizar_tree()
+        pass
     else:
-        mensaje_respuesta.config(text=f"Incorrecto. La respuesta correcta es: {respuesta_correcta.get()}", fg="red")
-    boton_siguiente.config(state=tk.NORMAL)  # Habilitar el botón "Siguiente" después de responder
+        respuestas_random = []
+        for i in range(0, 4):
+            respuestas_random.append(preguntas_random[numero][2 + i])
+        random.shuffle(respuestas_random)
+
+        ventana_pregunta = Toplevel(root)
+        ventana_pregunta.attributes("-fullscreen", True)
+        ventana_pregunta.configure(bg="light blue")
+
+        pregunta_titulo = Label(ventana_pregunta, text=preguntas_random[numero][1], bg="light blue", fg="black")
+        pregunta_titulo.pack(pady=100)
+
+         
+        respuesta_1 = Button(ventana_pregunta, text=respuestas_random[0], command=lambda resp=respuestas_random[0]: empezar(numero + 1, ventana_pregunta, resp), width=100, height=2, bg="white", fg="black")
+        respuesta_1.pack(pady=10)
+
+        respuesta_2 = Button(ventana_pregunta, text=respuestas_random[1], command=lambda resp=respuestas_random[1]: empezar(numero + 1, ventana_pregunta, resp), width=100, height=2, bg="white", fg="black")
+        respuesta_2.pack(pady=10)
+
+        respuesta_3 = Button(ventana_pregunta, text=respuestas_random[2], command=lambda r=respuestas_random[2]: empezar(numero + 1, ventana_pregunta, r), width=100, height=2, bg="white", fg="black")
+        respuesta_3.pack(pady=10)
 
 
-# Función para avanzar a la siguiente pregunta
-def siguiente_pregunta():
-    respuesta_correcta_label.config(text="")
-    cargar_pregunta()
-    etiqueta_resultado.config(text="")
-    boton_siguiente.config(state=tk.DISABLED)  # Deshabilitar el botón "Siguiente" al cargar una nueva pregunta
-
-# Función para comenzar el juego y ocultar los elementos iniciales
-def comenzar_juego():
-    nombre = entrada_nombre.get()
-    instagram = entrada_instagram.get()
-    etiqueta_nombre.config(text=f"Nombre: {nombre}")
-    etiqueta_instagram.config(text=f"Instagram: {instagram}")
-    entrada_nombre.pack_forget()  # Ocultar el campo de entrada de nombre
-    entrada_instagram.pack_forget()  # Ocultar el campo de entrada de Instagram
-    boton_comenzar.pack_forget()  # Ocultar el botón "Comenzar"
-    cargar_pregunta()
-    etiqueta_pregunta.pack()
-    mensaje_respuesta.pack()  # Mostrar la etiqueta de pregunta
-    boton_opcion1.pack()  # Mostrar los botones de respuesta
-    boton_opcion2.pack()
-    boton_opcion3.pack()
-    boton_opcion4.pack()
-    boton_siguiente.pack()  # Mostrar el botón "Siguiente"
+        respuesta_4 = Button(ventana_pregunta, text=respuestas_random[3], command=lambda resp=respuestas_random[3]: empezar(numero + 1, ventana_pregunta, resp), width=100, height=2, bg="white", fg="black")
+        respuesta_4.pack(pady=10)
 
 
 
-# Función para validar campos de entrada
-def validar_campos(P):
-    nombre = entrada_nombre.get()
-    instagram = entrada_instagram.get()
-    if nombre and instagram:
-        boton_comenzar.config(state=tk.NORMAL)
+    if ventana_anterior != 0:
+        if respuesta_anterior == preguntas_random[numero-1][2]:
+            puntos += 100
+        ventana_anterior.destroy()
     else:
-        boton_comenzar.config(state=tk.DISABLED)
-    return True
+        puntos = 0
+        tiempo = time.time()
 
-# Crear la ventana principal
-raiz = tk.Tk()
-raiz.title("Juego de Trivia")
-raiz.geometry("800x600")
-raiz.configure(bg="lightblue")  # Fondo azul claro
+def actualizar_tree():
+    global tree
+    tree.delete(*tree.get_children())
+    cursor.execute("select nombre, puntaje, tiempo, instagram from usuarios order by puntaje DESC")
+    for row in cursor.fetchall():
+        tree.insert("", "end", values=row)
 
-# Configurar colores
-color_fondo = "light blue"
-color_letras = "black"
-color_widget = "white"
+root = Tk()
+root.configure(bg="light blue")
 
-# Crear y configurar los elementos de la interfaz inicial
-etiqueta_nombre = tk.Label(raiz, text="Nombre:", bg=color_fondo, fg=color_letras)
-etiqueta_instagram = tk.Label(raiz, text="Instagram:", bg=color_fondo, fg=color_letras)
-entrada_nombre = tk.Entry(raiz, bg=color_widget, fg=color_letras)
-entrada_instagram = tk.Entry(raiz, bg=color_widget, fg=color_letras)
-boton_comenzar = tk.Button(raiz, text="Comenzar a Jugar", command=comenzar_juego, state=tk.DISABLED, bg=color_fondo, fg=color_letras)
-etiqueta_resultado = tk.Label(raiz, text="", bg=color_fondo, fg=color_letras)
+titulo = Label(root, text="PREGUNTADOS ISAUI", bg="light blue", fg="black")
+titulo.pack(pady=100)
 
-# Organizar los elementos en la ventana
-etiqueta_nombre.pack()
-entrada_nombre.pack()
-etiqueta_instagram.pack()
-entrada_instagram.pack()
-boton_comenzar.pack()
+nombre_label = Label(root, text="Nombre", bg="light blue", fg="black")
+nombre_label.pack(pady=10)
 
+nombre_entry = Entry(root)
+nombre_entry.pack(pady=0)
 
-# Agregar validación a los campos de entrada
-entrada_nombre.insert(0, "")
-entrada_instagram.insert(0, "")
-entrada_nombre.config(validate="key", validatecommand=(raiz.register(validar_campos), "%P"))
-entrada_instagram.config(validate="key", validatecommand=(raiz.register(validar_campos), "%P"))
-# Crear un marco para las respuestas
-marco_respuestas = tk.Frame(raiz, bg="lightblue")
-marco_respuestas.pack(expand=True, fill="both")
+instagram_label = Label(root, text="Instagram", bg="light blue", fg="black")
+instagram_label.pack(pady=10)
 
-# Crear un marco para la pregunta
-frame_pregunta = tk.Frame(raiz, bg="lightblue")
-frame_pregunta.pack(expand=True, fill="both")
+instagram_entry = Entry(root)
+instagram_entry.pack(pady=0)
 
+boton_jugar = Button(root, text="Empezar", command=lambda: empezar(0, 0, 0), bg="white", fg="black")
+boton_jugar.pack(pady=50)
 
-# Crear dos marcos para las opciones, uno para las dos primeras y otro para las dos últimas
-frame_opciones_1 = tk.Frame(marco_respuestas, bg="lightblue")
-frame_opciones_2 = tk.Frame(marco_respuestas, bg="lightblue")
-frame_opciones_1.pack(side="left", expand=True, fill="both")
-frame_opciones_2.pack(side="left", expand=True, fill="both")
+tree = ttk.Treeview(root, columns=("Nombre", "Puntaje", "Tiempo", "Instagram"))
+tree.pack()
 
-# Configurar las respuestas
-boton_opcion1 = tk.Button(frame_opciones_1, text="Respuesta 1", state=tk.DISABLED, command=lambda: verificar_respuesta(boton_opcion1.cget("text")))
-boton_opcion2 = tk.Button(frame_opciones_1, text="Respuesta 2", state=tk.DISABLED, command=lambda: verificar_respuesta(boton_opcion2.cget("text")))
-boton_opcion3 = tk.Button(frame_opciones_2, text="Respuesta 3", state=tk.DISABLED, command=lambda: verificar_respuesta(boton_opcion3.cget("text")))
-boton_opcion4 = tk.Button(frame_opciones_2, text="Respuesta 4", state=tk.DISABLED, command=lambda: verificar_respuesta(boton_opcion4.cget("text")))
-respuesta_correcta_label = tk.Label(raiz, text="", fg="green")
-boton_siguiente = tk.Button(raiz, text="Siguiente", state=tk.DISABLED, command=siguiente_pregunta)
+tree.heading("#1", text="Nombre")
+tree.heading("#2", text="Puntaje")
+tree.heading("#3", text="Tiempo")
+tree.heading("#4", text="Instagram")
 
-# Colocar los botones en los marcos de las opciones
-boton_opcion1.pack(side="top", fill="both", expand=True)
-boton_opcion2.pack(side="top", fill="both", expand=True)
-boton_opcion3.pack(side="top", fill="both", expand=True)
-boton_opcion4.pack(side="top", fill="both", expand=True)
+tree.column("#0", width=0, stretch=NO)
 
+actualizar_tree()
 
-# Configurar la etiqueta de la pregunta
-etiqueta_pregunta = tk.Label(raiz, text="", wraplength=400)
-etiqueta_pregunta.pack()
-
-
-# Colocar los botones en los contenedores de opciones
-boton_opcion1.pack(side="top", fill="both", expand=True)
-boton_opcion2.pack(side="top", fill="both", expand=True)
-boton_opcion3.pack(side="top", fill="both", expand=True)
-boton_opcion4.pack(side="top", fill="both", expand=True)
-
-# Etiqueta para mostrar el mensaje de respuesta
-mensaje_respuesta = tk.Label(raiz, text="", fg="green")
-mensaje_respuesta.pack()
-
-# Botón Siguiente
-boton_siguiente = tk.Button(raiz, text="Siguiente", state=tk.DISABLED, command=siguiente_pregunta)
-boton_siguiente.pack()
-
-
-# Variable para almacenar la respuesta correcta
-respuesta_correcta = tk.StringVar()
-
-# Iniciar el bucle principal de tkinter
-raiz.mainloop()
+root.resizable(0, 0)
+root.attributes("-fullscreen", True)
+root.mainloop()
