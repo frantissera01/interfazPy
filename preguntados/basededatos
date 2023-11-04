@@ -1,0 +1,18 @@
+CREATE DATABASE  preguntados;
+use preguntados;
+
+CREATE TABLE preguntas (
+codpregunta int PRIMARY KEY auto_increment,
+pregunta VARCHAR (150) NOT NULL,
+respuesta varchar (150),
+opcion1 varchar(150),
+opcion2 varchar (150),
+OPCION3 varchar(150)
+);
+CREATE TABLE usuarios (
+    codusuario int PRIMARY KEY auto_increment,
+    nombre varchar(150) NOT NULL,
+    puntaje decimal(10, 2) NOT NULL,  -- Utiliza DECIMAL para valores con decimales (10, 2 significa 10 dígitos en total y 2 decimales)
+    tiempo int NOT NULL,
+    instagram int NOT NULL
+);
